@@ -1,0 +1,22 @@
+---
+title: Tipagem explicita
+description: Components
+---
+
+tipagem explicita para schema no drizzle
+
+## Code Block
+
+```ts
+  parentId: integer("parentId").references((): AnyPgColumn => containers.id, { onDelete: "cascade" }),
+```
+
+## Cards
+
+<Cards>
+  <Card title="Learn more about Next.js" href="https://nextjs.org/docs" />
+  <Card
+    title="Learn more about Next Docs"
+    href="https://next-docs-zeta.vercel.app"
+  />
+</Cards>
