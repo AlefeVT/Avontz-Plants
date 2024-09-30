@@ -15,38 +15,25 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { useToast } from '@/components/ui/use-toast';
 import { CheckIcon } from 'lucide-react';
-import { useContext, useState, useEffect } from 'react';
+import { useContext, useState } from 'react';
 import { ToggleContext } from '@/components/interactive-overlay';
 import { z } from 'zod';
 import { schema } from '../validation';
-import { updateContainerAction } from '../actions';
-import SearchableSelect from './SearchableSelect';
+import { createPlantAction } from '../actions';
 
-interface EditContainerFormProps {
-  containerData: {
-    id: number;
-    name: string;
-    description?: string;
-    parentId?: number | null;
-  };
-  containersOptions: { id: number; name: string; description?: string }[];
-}
-
-export function EditContainerForm({
-  containerData,
-  containersOptions,
-}: EditContainerFormProps) {
+export function CreatePlantsForm() {
   const { setIsOpen } = useContext(ToggleContext);
   const { toast } = useToast();
-  const [parentId, setParentId] = useState<string | null>(
-    containerData.parentId ? containerData.parentId.toString() : null
-  );
+  const [parentId, setParentId] = useState<string | null>(null);
 
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {
-      name: containerData.name,
-      description: containerData.description || '',
+      name: '',
+      scientificName: '',
+      description: '',
+      history: '',
+      photos: null,
     },
   });
 
@@ -59,15 +46,11 @@ export function EditContainerForm({
   const onSubmit = async (values: z.infer<typeof schema>) => {
     try {
       const parsedParentId = parentId ? Number(parentId) : null;
-      await updateContainerAction({
-        ...values,
-        parentId: parsedParentId,
-        id: containerData.id,
-      });
+      await createPlantAction({ ...values });
 
       toast({
-        title: 'Caixa Atualizada',
-        description: 'A caixa foi atualizada com sucesso!',
+        title: 'Planta Criada',
+        description: 'A planta foi criada com sucesso!',
       });
 
       setIsOpen(false);
@@ -91,9 +74,27 @@ export function EditContainerForm({
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Nome da caixa</FormLabel>
+              <FormLabel>Nome da planta</FormLabel>
               <FormControl>
-                <Input {...field} placeholder="Digite o nome da caixa" />
+                <Input {...field} placeholder="Digite o nome da planta" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={control}
+          name="scientificName"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Nome científico (Opcional)</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  value={field.value ?? ''}  
+                  placeholder="Digite o nome científico"
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -105,11 +106,11 @@ export function EditContainerForm({
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Descrição (Opcional)</FormLabel>
+              <FormLabel>Descrição</FormLabel>
               <FormControl>
                 <Textarea
                   {...field}
-                  placeholder="Descreva a caixa (opcional)"
+                  placeholder="Descreva a planta"
                   rows={4}
                 />
               </FormControl>
@@ -118,20 +119,27 @@ export function EditContainerForm({
           )}
         />
 
-        {/* <SearchableSelect
-          items={containersOptions.map((container) => ({
-            value: container.id.toString(),
-            label: container.name,
-            description: container.description || undefined,
-          }))}
-          selectedValue={parentId}
-          onValueChange={setParentId}
-          label="Caixa Pai (Opcional)"
-          placeholder="Selecione uma caixa pai..."
-        /> */}
+        <FormField
+          control={control}
+          name="history"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>História (Opcional)</FormLabel>
+              <FormControl>
+                <Textarea
+                  {...field}
+                  value={field.value ?? ''}  
+                  placeholder="Adicione a história da planta"
+                  rows={4}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <LoaderButton isLoading={isSubmitting}>
-          <CheckIcon className="h-5" /> Atualizar Caixa
+          <CheckIcon className="h-5" /> Cadastrar Planta
         </LoaderButton>
       </form>
     </Form>
