@@ -34,7 +34,7 @@ export default async function Home() {
     return (
       <div>
         <HeroSection />
-        <PricingSection hasSubscription={hasSubscription} />
+        {/* <PricingSection hasSubscription={hasSubscription} /> */}
       </div>
     );
   }

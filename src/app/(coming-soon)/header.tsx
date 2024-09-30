@@ -13,9 +13,9 @@ export function ComingSoonHeader() {
             className="hover:text-blue-100 flex gap-1 items-center"
           >
             <Image
-              src="/logo/AVONTZ_logo.svg"
-              width="60"
-              height="60"
+              src="/logo/logo.svg"
+              width="50"
+              height="50"
               alt="hero image"
               className="rounded-full w-16 h-16 mr-4"
             />
