@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { LoaderButton } from '@/components/loader-button';
 import {
@@ -17,14 +17,16 @@ import { useToast } from '@/components/ui/use-toast';
 import { CheckIcon } from 'lucide-react';
 import { useContext, useState } from 'react';
 import { ToggleContext } from '@/components/interactive-overlay';
-import { z } from 'zod';
 import { schema } from '../validation';
 import { createPlantAction } from '../actions';
+import { z } from 'zod';
+import { useServerAction } from "zsa-react";
 
 export function CreatePlantsForm() {
   const { setIsOpen } = useContext(ToggleContext);
   const { toast } = useToast();
-  const [parentId, setParentId] = useState<string | null>(null);
+
+  const [photos, setPhotos] = useState<File[]>([]);
 
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
@@ -33,42 +35,51 @@ export function CreatePlantsForm() {
       scientificName: '',
       description: '',
       history: '',
-      photos: null,
     },
   });
 
-  const {
-    handleSubmit,
-    control,
-    formState: { isSubmitting },
-  } = form;
+  const { handleSubmit, control } = form;
 
-  const onSubmit = async (values: z.infer<typeof schema>) => {
-    try {
-      const parsedParentId = parentId ? Number(parentId) : null;
-      await createPlantAction({ ...values });
-
+  const { execute, error, isPending } = useServerAction(createPlantAction, {
+    onSuccess() {
       toast({
-        title: 'Planta Criada',
-        description: 'A planta foi criada com sucesso!',
+        title: "Success",
+        description: "Planta criada com sucesso.",
       });
-
       setIsOpen(false);
-    } catch (err: any) {
+    },
+    onError() {
       toast({
-        title: 'Erro',
-        description: err.message,
-        variant: 'destructive',
+        title: "Erro",
+        variant: "destructive",
+        description: "Algo deu errado ao criar a planta.",
       });
-    }
+    },
+  });
+
+  const onSubmit = async (data: z.infer<typeof schema>) => {
+    const formData = new FormData();
+    formData.append('name', data.name);
+    formData.append('scientificName', data.scientificName || '');
+    formData.append('description', data.description);
+    formData.append('history', data.history || '');
+
+    photos.forEach((photo) => {
+      formData.append('files', photo);
+    });
+
+    execute({
+      name: data.name,
+      scientificName: data.scientificName || '',
+      description: data.description,
+      history: data.history || '',
+      fileWrapper: formData,
+    });
   };
 
   return (
     <Form {...form}>
-      <form
-        onSubmit={handleSubmit(onSubmit)}
-        className="flex flex-col gap-4 mb-10"
-      >
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 mb-10">
         <FormField
           control={control}
           name="name"
@@ -92,7 +103,6 @@ export function CreatePlantsForm() {
               <FormControl>
                 <Input
                   {...field}
-                  value={field.value ?? ''}  
                   placeholder="Digite o nome científico"
                 />
               </FormControl>
@@ -108,11 +118,7 @@ export function CreatePlantsForm() {
             <FormItem>
               <FormLabel>Descrição</FormLabel>
               <FormControl>
-                <Textarea
-                  {...field}
-                  placeholder="Descreva a planta"
-                  rows={4}
-                />
+                <Textarea {...field} placeholder="Descreva a planta" rows={4} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -128,7 +134,6 @@ export function CreatePlantsForm() {
               <FormControl>
                 <Textarea
                   {...field}
-                  value={field.value ?? ''}  
                   placeholder="Adicione a história da planta"
                   rows={4}
                 />
@@ -138,7 +143,19 @@ export function CreatePlantsForm() {
           )}
         />
 
-        <LoaderButton isLoading={isSubmitting}>
+        <FormItem>
+          <FormLabel>Fotos da planta</FormLabel>
+          <FormControl>
+            <Input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={(e) => setPhotos(e.target.files ? Array.from(e.target.files) : [])}
+            />
+          </FormControl>
+        </FormItem>
+
+        <LoaderButton isLoading={isPending}>
           <CheckIcon className="h-5" /> Cadastrar Planta
         </LoaderButton>
       </form>

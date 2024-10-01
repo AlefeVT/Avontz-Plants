@@ -145,9 +145,9 @@ export function PlantTable({
                       {header.isPlaceholder
                         ? null
                         : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
                     </TableHead>
                   ))}
                 </TableRow>
@@ -221,11 +221,12 @@ export function PlantTable({
           setIsOpen={setIsOpen}
           form={
             <EditPlantForm
-              plantData={{
+              plant={{
                 ...plantData,
-                description: plantData.description || undefined,
+                description: plantData?.description || "",
               }}
             />
+
           }
         />
       )}
@@ -234,11 +235,10 @@ export function PlantTable({
         isOpen={isDeleteModalOpen}
         setIsOpen={setIsDeleteModalOpen}
         title="Excluir planta(s)"
-        description={`Tem certeza de que deseja excluir ${
-          selectedPlantsForDelete.length === 1
+        description={`Tem certeza de que deseja excluir ${selectedPlantsForDelete.length === 1
             ? `a planta ${selectedPlantsForDelete[0]?.name}`
             : `${selectedPlantsForDelete.length} plantas`
-        }? Todos os dados relacionados a essas plantas serão removidos.`}
+          }? Todos os dados relacionados a essas plantas serão removidos.`}
         onConfirm={async () => {
           await handleDeletePlants(selectedPlantsForDelete, () => {
             setIsDeleteModalOpen(false);

@@ -1,26 +1,22 @@
 import { database } from '@/db';
 import { plants } from '@/db/schema';
-import { eq, sql } from 'drizzle-orm';
+import { desc, eq, isNull } from 'drizzle-orm';
 import { PublicError } from '@/use-cases/errors';
 import { PlantData } from '@/interfaces/PlantData';
+import { uploadFileToBucket } from '@/lib/files';
+import { MAX_UPLOAD_IMAGE_SIZE, MAX_UPLOAD_IMAGE_SIZE_IN_MB } from '@/app-config';
+import { UserSession } from './types';
+import { PlantId } from "@/db/schema";
+import { createUUID } from '@/util/uuid';
+import { assertPlantExists } from './authorization';
+import { createPlant, updatePlant } from '@/data-access/plants';
 
-// Função para listar todas as plantas
-export async function getPlantsData(): Promise<PlantData[]> {
+export async function getPlantUseCase(): Promise<PlantData[]> {
   try {
-    const allPlants = await database
-      .select({
-        id: plants.id,
-        name: plants.name,
-        scientificName: plants.scientificName,
-        description: plants.description,
-        createdAt: plants.createdAt,
-        qrCode: plants.qrCode,
-        userId: plants.userId,
-        history: plants.history,
-        photos: plants.photos,
-      })
-      .from(plants)
-      .where(sql`${plants.deletedAt} IS NULL`);
+    const allPlants = await database.query.plants.findMany({
+      where: (fields) => isNull(fields.deletedAt), 
+      orderBy: (fields) => desc(fields.createdAt), 
+    });
 
     return allPlants;
   } catch (error) {
@@ -29,87 +25,125 @@ export async function getPlantsData(): Promise<PlantData[]> {
   }
 }
 
-// Função para cadastrar uma nova planta
-export async function createPlantUseCase({
-  name,
-  scientificName,
-  description,
-  history,
-  photos,
-  userId,
-}: {
-  name: string;
-  scientificName?: string | null;
-  description: string;
-  history?: string | null;
-  photos?: string | null;
-  userId: number;
-}) {
-  const existingPlant = await database
-    .select({ id: plants.id })
-    .from(plants)
-    .where(eq(plants.name, name))
-    .limit(1);
+export async function createPlantUseCase(
+  authenticatedUser: UserSession,
+  {
+    name,
+    scientificName,
+    description,
+    history,
+    plantImages, 
+  }: {
+    name: string;
+    scientificName: string;
+    description: string;
+    history: string;
+    plantImages?: File[];
+  }
+) {
+  let photoNames = '';
 
-  if (existingPlant.length > 0) {
-    throw new PublicError('Já existe uma planta com esse nome.');
+  if (plantImages) {
+    const generatedNames = plantImages.map(() => createUUID());
+
+    photoNames = generatedNames.join(', ');
   }
 
-  const result = await database.insert(plants).values({
+  await createPlant({
+    userId: authenticatedUser.id,
     name,
-    scientificName: scientificName || null,
+    scientificName,
     description,
-    history: history || null,
-    photos: photos || null,
-    userId: userId,
-    createdAt: new Date(),
+    history,
+    photoName: photoNames, 
   });
 
-  return result;
+  if (plantImages && plantImages.length > 0) {
+    const plant = await database.query.plants.findFirst({
+      orderBy: desc(plants.id),
+    });
+
+    if (!plant) throw new Error('Erro ao encontrar a planta recém-criada.');
+
+    for (let i = 0; i < plantImages.length; i++) {
+      const plantImage = plantImages[i];
+      const imageId = photoNames.split(', ')[i]; 
+      await uploadFileToBucket(plantImage, `plants/${plant.id}/images/${imageId}`);
+    }
+  }
 }
 
-// Função para editar uma planta
-export async function updatePlantUseCase({
-  id,
-  name,
-  scientificName,
-  description,
-  history,
-  photos,
-}: {
-  id: number;
-  name: string;
-  scientificName?: string | null;
-  description: string;
-  history?: string | null;
-  photos?: string | null;
-}) {
-  const existingPlant = await database
-    .select({ id: plants.id })
-    .from(plants)
-    .where(eq(plants.id, id))
-    .limit(1);
+export async function updatePlantUseCase(
+  authenticatedUser: UserSession,
+  {
+    plantId, 
+    name,
+    scientificName,
+    description,
+    history,
+    plantImages,
+  }: {
+    plantId: number;
+    name: string;
+    scientificName: string;
+    description: string;
+    history: string;
+    plantImages?: File[];
+  }
+) {
+  const plant = await assertPlantExists(plantId);
 
-  if (existingPlant.length === 0) {
-    throw new Error('Planta não encontrada.');
+  if (plant.userId !== authenticatedUser.id) {
+    throw new Error('Usuário não autorizado a atualizar esta planta.');
   }
 
-  const result = await database
-    .update(plants)
-    .set({
-      name,
-      scientificName: scientificName || null,
-      description,
-      history: history || null,
-      photos: photos || null,
-    })
-    .where(eq(plants.id, id));
+  let photoNames = plant.photoName || ''; 
 
-  return result;
+  if (plantImages && plantImages.length > 0) {
+    const generatedNames = plantImages.map(() => createUUID());
+
+    photoNames = photoNames
+      ? `${photoNames}, ${generatedNames.join(', ')}`
+      : generatedNames.join(', ');
+  }
+
+  await updatePlant(plantId, {
+    name,
+    scientificName,
+    description,
+    history,
+    photoName: photoNames, 
+  });
+
+  if (plantImages && plantImages.length > 0) {
+    for (let i = 0; i < plantImages.length; i++) {
+      const plantImage = plantImages[i];
+      const imageId = photoNames.split(', ')[i]; 
+      await uploadFileToBucket(plantImage, `plants/${plant.id}/images/${imageId}`);
+    }
+  }
 }
+
+export async function updatePlantImageUseCase(
+  authenticatedUser: UserSession,
+  { plantId, file }: { plantId: PlantId; file: File }
+) {
+
+  if (file.size > MAX_UPLOAD_IMAGE_SIZE) {
+    throw new PublicError(
+      `File size should be less than ${MAX_UPLOAD_IMAGE_SIZE_IN_MB}MB.`
+    );
+  }
+
+  const imageId = createUUID();
+
+  await uploadFileToBucket(file, `plants/${plantId}/images/${imageId}`);
+}
+
 
 // Função para deletar uma planta
 export async function deletePlantUseCase(plantId: number) {
+  'use server';
   const plant = await database
     .select({ id: plants.id })
     .from(plants)
