@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS "plants" (
 	"scientificName" text,
 	"description" text NOT NULL,
 	"history" text,
-	"photos" text,
+	"photoFileName" text NOT NULL,
 	"qrCode" text,
 	"createdAt" timestamp DEFAULT now(),
 	"deletedAt" timestamp

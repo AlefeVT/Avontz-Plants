@@ -172,10 +172,10 @@ export const plants = pgTable('plants', {
   scientificName: text('scientificName'),
   description: text('description').notNull(),
   history: text('history'),
-  photos: text('photos'), // URLs das imagens das plantas
-  qrCode: text('qrCode'), // QR code gerado para a planta
+  photoName: text('photoFileName').notNull(),
+  qrCode: text('qrCode'), 
   createdAt: timestamp('createdAt', { mode: 'date' }).default(sql`now()`),
-  deletedAt: timestamp('deletedAt', { mode: 'date' })
+  deletedAt: timestamp('deletedAt', { mode: 'date' }),
 });
 
 /**
@@ -193,3 +193,9 @@ export type MagicLink = typeof magicLinks.$inferSelect;
 export type ResetToken = typeof resetTokens.$inferSelect;
 export type VerifyEmailToken = typeof verifyEmailTokens.$inferSelect;
 export type Account = typeof accounts.$inferSelect;
+
+export type NewPlant = typeof plants.$inferInsert;
+
+export type Plants = typeof plants.$inferSelect;
+
+export type PlantId = Plants["id"];

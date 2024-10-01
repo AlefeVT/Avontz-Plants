@@ -1,5 +1,5 @@
 {
-  "id": "ede639a5-dbde-456c-87d8-1d1080d16f9c",
+  "id": "3e31e90f-5e0e-4ee7-b197-17ef51372d65",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "6",
   "dialect": "postgresql",
@@ -276,11 +276,11 @@
           "primaryKey": false,
           "notNull": false
         },
-        "photos": {
-          "name": "photos",
+        "photoFileName": {
+          "name": "photoFileName",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "qrCode": {
           "name": "qrCode",
