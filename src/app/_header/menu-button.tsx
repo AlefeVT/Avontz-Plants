@@ -37,14 +37,14 @@ export function MenuButton() {
                 <LayoutDashboard className="w-4 h-4" /> Painel Geral
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem asChild>
+            {/* <DropdownMenuItem asChild>
               <Link
                 href="/plants"
                 className="flex gap-2 items-center cursor-pointer"
               >
                 <Package className="w-4 h-4" /> Plantas
               </Link>
-            </DropdownMenuItem>
+            </DropdownMenuItem> */}
 
             {/* <DropdownMenuItem asChild>
               <Link
