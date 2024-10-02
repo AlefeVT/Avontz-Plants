@@ -27,7 +27,7 @@ export function HeaderLinks({ isAuthenticated }: { isAuthenticated: boolean }) {
             </Link>
           </Button>
 
-          <Button
+          {/* <Button
             variant={'link'}
             asChild
             className="flex items-center justify-center gap-2"
@@ -35,7 +35,7 @@ export function HeaderLinks({ isAuthenticated }: { isAuthenticated: boolean }) {
             <Link href={'/plants'}>
               <Package className="w-4 h-4" /> Plantas
             </Link>
-          </Button>
+          </Button> */}
 
           <Button
             variant={'link'}

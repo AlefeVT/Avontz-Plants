@@ -78,7 +78,7 @@ async function HeaderActions() {
       {isSignedIn ? (
         <>
           <Suspense>
-            <NotificationsWrapper />
+            {/* <NotificationsWrapper /> */}
           </Suspense>
 
           <DropdownMenu>

@@ -1,7 +1,4 @@
-"use client";
-
-import { EllipsisVertical, PencilIcon, TrashIcon } from "lucide-react";
-
+import { EllipsisVertical, PencilIcon, TrashIcon, QrCodeIcon, EyeIcon } from "lucide-react"; 
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -18,6 +15,8 @@ import { cn } from "@/lib/utils";
 import { InteractiveOverlay } from "@/components/interactive-overlay";
 import { deletePlantAction } from "../../actions";
 import { EditPlantForm } from "../edit-plants-form";
+import { QRCodeModal } from "./QRCodeModal";
+import Link from "next/link"; 
 
 export function PlantsActions({ plant }: { plant: Plants }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -28,6 +27,7 @@ export function PlantsActions({ plant }: { plant: Plants }) {
     },
   });
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isQRCodeModalOpen, setIsQRCodeModalOpen] = useState(false);
 
   return (
     <>
@@ -54,31 +54,52 @@ export function PlantsActions({ plant }: { plant: Plants }) {
 
       <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size={"icon"}>
+          <Button variant="outline" size={"icon"} style={{ cursor: 'pointer' }}>
             <EllipsisVertical />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
           <DropdownMenuItem
-            onClick={(e) => {
+            onClick={() => {
               setIsEditPlantOpen(true);
             }}
-            className={btnStyles}
+            className={cn(btnStyles, "cursor-pointer")}
           >
             <PencilIcon className={btnIconStyles} />
             Editar Planta
           </DropdownMenuItem>
           <DropdownMenuItem
-            className={cn(btnStyles, "text-red-500")}
-            onClick={(e) => {
+            className={cn(btnStyles, "text-red-500 cursor-pointer")}
+            onClick={() => {
               setIsDeleteModalOpen(true);
             }}
           >
             <TrashIcon className={btnIconStyles} />
             Remover Planta
           </DropdownMenuItem>
+          <DropdownMenuItem
+            className={cn(btnStyles, "cursor-pointer")}
+            onClick={() => {
+              setIsQRCodeModalOpen(true);
+            }}
+          >
+            <QrCodeIcon className={btnIconStyles} />
+            Gerar QR Code
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href={`/plants/${plant.id}`} className={cn(btnStyles, "cursor-pointer")}>
+              <EyeIcon className={btnIconStyles} />
+              Visualizar Página
+            </Link>
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <QRCodeModal
+        isOpen={isQRCodeModalOpen}
+        onClose={() => setIsQRCodeModalOpen(false)}
+        qrValue={`http://localhost:3000/plants/${plant.id}`}
+      />
     </>
   );
 }
